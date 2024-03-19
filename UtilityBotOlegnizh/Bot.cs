@@ -37,8 +37,26 @@ namespace VoiceTexterBot
 
         async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
+            //  Обрабатываем нажатия на кнопки  из Telegram Bot API: https://core.telegram.org/bots/api#callbackquery
             if (update.Type == UpdateType.CallbackQuery)
-                await _telegramClient.SendTextMessageAsync(update.Message.Chat.Id, $"Длина сообщения: {update.Message.Text.Length} знаков", cancellationToken: cancellationToken);
+            {
+                await _telegramClient.SendTextMessageAsync(update.CallbackQuery.From.Id, $"Данный тип сообщений не поддерживается. Пожалуйста отправьте текст.", cancellationToken: cancellationToken);
+                return;
+            }
+
+            // Обрабатываем входящие сообщения из Telegram Bot API: https://core.telegram.org/bots/api#message
+            if (update.Type == UpdateType.Message)
+            {
+                switch (update.Message!.Type)
+                {
+                    case MessageType.Text:
+                        await _telegramClient.SendTextMessageAsync(update.Message.From.Id, $"Длина сообщения - {update.Message.Text} - {update.Message.Text.Length} знаков", cancellationToken: cancellationToken);
+                        return;
+                    default: // unsupported message
+                        await _telegramClient.SendTextMessageAsync(update.Message.From.Id, $"Данный тип сообщений не поддерживается. Пожалуйста отправьте текст.", cancellationToken: cancellationToken);
+                        return;
+                }
+            }
         }
 
         Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
