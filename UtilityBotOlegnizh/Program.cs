@@ -6,7 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Telegram.Bot;
 
 
-namespace VoiceTexterBot
+namespace UtilityBot
 {
     public class Program
     {
@@ -32,6 +32,7 @@ namespace VoiceTexterBot
             services.AddSingleton<ITelegramBotClient>(provider => new TelegramBotClient("bot-secret"));
             // Регистрируем постоянно активный сервис бота
             services.AddHostedService<Bot>();
+
         }
     }
 

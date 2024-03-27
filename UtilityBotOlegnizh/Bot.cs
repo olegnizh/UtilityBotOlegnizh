@@ -10,9 +10,10 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.Hosting;
+using Telegram.Bot.Types.ReplyMarkups;
 
 
-namespace VoiceTexterBot
+namespace UtilityBot
 {
 
     internal class Bot : BackgroundService
@@ -32,11 +33,14 @@ namespace VoiceTexterBot
                 new ReceiverOptions() { AllowedUpdates = { } }, // Здесь выбираем, какие обновления хотим получать. В данном случае разрешены все
                 cancellationToken: stoppingToken);
 
-            Console.WriteLine("Бот запущен");
+            var me = await _telegramClient.GetMeAsync();
+            Console.WriteLine($"{me.FirstName} запущен");
+
         }
 
         async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
+
             //  Обрабатываем нажатия на кнопки  из Telegram Bot API: https://core.telegram.org/bots/api#callbackquery
             if (update.Type == UpdateType.CallbackQuery)
             {
@@ -47,14 +51,31 @@ namespace VoiceTexterBot
             // Обрабатываем входящие сообщения из Telegram Bot API: https://core.telegram.org/bots/api#message
             if (update.Type == UpdateType.Message)
             {
-                switch (update.Message!.Type)
+                switch (update.Message!.Text)
                 {
-                    case MessageType.Text:
-                        await _telegramClient.SendTextMessageAsync(update.Message.From.Id, $"Длина сообщения - {update.Message.Text} - {update.Message.Text.Length} знаков", cancellationToken: cancellationToken);
+                    case "/start":
+                        Console.WriteLine($"{update.Message.From.FirstName} ({update.Message.From.Id}) написал сообщение: {update.Message.Text}");
+                        var buttons = new List<InlineKeyboardButton[]>();
+                        buttons.Add(new[]
+                        {
+                        InlineKeyboardButton.WithCallbackData($" Количество символов в сообщении" , $"simbolsCount"),
+                        });
+                        buttons.Add(new[]
+                        {
+                        InlineKeyboardButton.WithCallbackData($" Сумма из цифр в сообщении" , $"sumNumbers")
+                        });
+                        //await _telegramClient.SendTextMessageAsync(update.Message.From.Id, $"Длина сообщения - {update.Message.Text} - {update.Message.Text.Length} знаков", cancellationToken: cancellationToken);
+                        await _telegramClient.SendTextMessageAsync(update.Message.Chat.Id, $"<b>  Бот произведет операцию</b> {Environment.NewLine}" +
+                        $"{Environment.NewLine}Выберите с помощью кнопки.{Environment.NewLine}",
+                        cancellationToken: cancellationToken, parseMode: ParseMode.Html, replyMarkup: new InlineKeyboardMarkup(buttons));
+
                         return;
-                    default: // unsupported message
+
+                    default:
+
                         await _telegramClient.SendTextMessageAsync(update.Message.From.Id, $"Данный тип сообщений не поддерживается. Пожалуйста отправьте текст.", cancellationToken: cancellationToken);
                         return;
+
                 }
             }
         }
